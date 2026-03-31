@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum OrderStatus {
+  NEW
+  PAID
+  ASSEMBLING
+  SHIPPED
+  DELIVERED
+  CANCELED
+  RETURNED
+}
+
+enum ReviewSource {
+  SITE
+  OZON
+  WILDBERRIES
+  YANDEX_MARKET
+  OTHER
+}
+
+enum ReviewStatus {
+  NEW
+  PENDING_REPLY
+  REPLIED
+  ARCHIVED
+}
+
+enum DeliveryMethodType {
+  CDEK
+  BOXBERRY
+  POST_RU
+  COURIER
+  PICKUP
+  OTHER
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id                String         @id @default(cuid())
+  sku               String         @unique
+  slug              String         @unique
+  title             String
+  shortDescription  String?
+  description       String?
+  category          String
+  brand             String         @default("KaiRox")
+  status            ProductStatus  @default(DRAFT)
+  price             Decimal        @db.Decimal(10, 2)
+  compareAtPrice    Decimal?       @db.Decimal(10, 2)
+  purchasePrice     Decimal?       @db.Decimal(10, 2)
+  currency          String         @default("RUB")
+  stock             Int            @default(0)
+  reservedStock     Int            @default(0)
+  seoTitle          String?
+  seoDescription    String?
+  attributesJson    Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  images            ProductImage[]
+  reviews           Review[]
+  orderItems        OrderItem[]
+}
+
+model ProductImage {
+  id         String   @id @default(cuid())
+  productId  String
+  url        String
+  alt        String?
+  position   Int      @default(0)
+  isCover    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+}
+
+model Customer {
+  id          String    @id @default(cuid())
+  email       String?   @unique
+  phone       String?
+  firstName   String?
+  lastName    String?
+  city        String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  orders       Order[]
+  dialogues    DialogueThread[]
+}
+
+model Order {
+  id                String       @id @default(cuid())
+  orderNumber       String       @unique
+  customerId        String?
+  status            OrderStatus  @default(NEW)
+  subtotalAmount    Decimal      @db.Decimal(10, 2)
+  deliveryAmount    Decimal      @db.Decimal(10, 2)
+  discountAmount    Decimal      @db.Decimal(10, 2) @default(0)
+  totalAmount       Decimal      @db.Decimal(10, 2)
+  currency          String       @default("RUB")
+  paymentMethod     String?
+  paymentStatus     String?
+  deliveryMethod    String?
+  deliveryPayload   Json?
+  comment           String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  customer          Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items             OrderItem[]
+
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  title       String
+  sku         String
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  totalPrice  Decimal  @db.Decimal(10, 2)
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Review {
+  id           String        @id @default(cuid())
+  productId     String
+  source        ReviewSource
+  sourceRef     String?
+  rating        Int
+  authorName    String?
+  text          String
+  replyText     String?
+  status        ReviewStatus @default(NEW)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  product       Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, source])
+  @@index([status, createdAt])
+}
+
+model DeliveryMethod {
+  id             String             @id @default(cuid())
+  code           String             @unique
+  title          String
+  type           DeliveryMethodType
+  isEnabled      Boolean            @default(true)
+  configJson     Json?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model DialogueChannel {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  title         String
+  isEnabled     Boolean  @default(false)
+  configJson    Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model DialogueTemplate {
+  id            String   @id @default(cuid())
+  title         String
+  scope         String
+  templateText  String
+  variablesJson Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model DialogueThread {
+  id            String   @id @default(cuid())
+  customerId    String?
+  channelCode   String
+  subject       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+}
+
+model FaqEntry {
+  id            String   @id @default(cuid())
+  question      String
+  answer        String
+  category      String?
+  isPublished   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SiteTheme {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SiteBanner {
+  id            String   @id @default(cuid())
+  key           String
+  title         String
+  subtitle      String?
+  imageUrl      String?
+  linkUrl       String?
+  position      Int      @default(0)
+  isEnabled     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([key, position])
+}
