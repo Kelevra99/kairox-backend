@@ -121,5 +121,9 @@ export const siteSettings = {
     benefits: true,
     featuredProducts: true,
     articles: false
+  },
+  assets: {
+    logoUrl: null as string | null,
+    faviconUrl: null as string | null
   }
 };

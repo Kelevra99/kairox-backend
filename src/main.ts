@@ -1,8 +1,12 @@
 import "reflect-metadata";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
 import { AppModule } from "./app.module";
 import { AppConfigService } from "./modules/config/app-config.service";
 
@@ -15,6 +19,21 @@ async function bootstrap() {
   );
 
   const config = app.get(AppConfigService);
+
+  const uploadsRoot = join(process.cwd(), "uploads");
+  await mkdir(uploadsRoot, { recursive: true });
+
+  await app.register(multipart, {
+    limits: {
+      files: 1,
+      fileSize: 2 * 1024 * 1024
+    }
+  });
+
+  await app.register(fastifyStatic, {
+    root: uploadsRoot,
+    prefix: "/uploads/"
+  });
 
   await app.register(cors, {
     origin: [config.frontendUrl],

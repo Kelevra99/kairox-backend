@@ -24,4 +24,8 @@ export class AppConfigService {
   get redisUrl(): string {
     return this.configService.get<string>("redisUrl", "");
   }
+
+  get assetBaseUrl(): string {
+    return this.configService.get<string>("assetBaseUrl", `http://localhost:${this.port}`);
+  }
 }
