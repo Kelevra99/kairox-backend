@@ -1,4 +1,4 @@
-import { IsHexColor, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { Allow, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class UpdateSiteSettingsDto {
   @IsOptional()
@@ -7,26 +7,10 @@ export class UpdateSiteSettingsDto {
   brandName?: string;
 
   @IsOptional()
-  @IsHexColor()
-  bg?: string;
+  @Allow()
+  colors?: Record<string, unknown>;
 
   @IsOptional()
-  @IsHexColor()
-  panel?: string;
-
-  @IsOptional()
-  @IsHexColor()
-  primary?: string;
-
-  @IsOptional()
-  @IsHexColor()
-  primaryStrong?: string;
-
-  @IsOptional()
-  @IsHexColor()
-  text?: string;
-
-  @IsOptional()
-  @IsHexColor()
-  textSoft?: string;
+  @Allow()
+  appearance?: Record<string, unknown>;
 }

@@ -115,6 +115,30 @@ export const siteSettings = {
     text: "#f8fafc",
     textSoft: "#9fb0d1"
   },
+  appearance: {
+    pageUseGradient: true,
+    pageBg: "#0b1020",
+    pageBgTo: "#121a2e",
+    pageGradientAngle: 180,
+    pageGlowEnabled: true,
+    pageGlowColor: "#d69b00",
+
+    headerUseGradient: false,
+    headerBg: "#0b1020",
+    headerBgTo: "#121a2e",
+    headerGradientAngle: 180,
+
+    surfaceUseGradient: false,
+    surfaceBg: "#121a2e",
+    surfaceBgTo: "#17213a",
+    surfaceGradientAngle: 180,
+
+    buttonUseGradient: false,
+    buttonBg: "#d69b00",
+    buttonBgTo: "#b88100",
+    buttonGradientAngle: 90,
+    buttonText: "#0b1020"
+  },
   modules: {
     hero: true,
     categories: true,
