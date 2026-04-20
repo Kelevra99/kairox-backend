@@ -6,10 +6,10 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { AppConfigService } from "@/modules/config/app-config.service";
 import { UpdateSiteSettingsDto } from "./dto/update-site-settings.dto";
+import { UpdateAdminThemeDto } from "./dto/update-admin-theme.dto";
 import { siteSettings } from "@/shared/mock-data/store.seed";
 
 type SiteSettingsState = typeof siteSettings;
-type AssetType = "logo" | "favicon";
 
 const SITE_SETTINGS_KEY = "global";
 
@@ -31,6 +31,7 @@ export class SiteSettingsService {
       colors?: Partial<SiteSettingsState["colors"]>;
       modules?: Partial<SiteSettingsState["modules"]>;
       assets?: Partial<SiteSettingsState["assets"]>;
+      adminTheme?: Partial<SiteSettingsState["adminTheme"]>;
     };
 
     return {
@@ -47,6 +48,10 @@ export class SiteSettingsService {
       assets: {
         ...base.assets,
         ...candidate.assets
+      },
+      adminTheme: {
+        ...base.adminTheme,
+        ...candidate.adminTheme
       }
     };
   }
@@ -109,10 +114,49 @@ export class SiteSettingsService {
       },
       assets: {
         ...current.assets
+      },
+      adminTheme: {
+        ...current.adminTheme
       }
     };
 
     return this.saveSettings(nextState);
+  }
+
+  async getAdminSettings() {
+    const current = await this.ensureSettings();
+    return current.adminTheme;
+  }
+
+  async updateAdminSettings(payload: UpdateAdminThemeDto) {
+    const current = await this.ensureSettings();
+
+    const nextState: SiteSettingsState = {
+      ...current,
+      colors: {
+        ...current.colors
+      },
+      modules: {
+        ...current.modules
+      },
+      assets: {
+        ...current.assets
+      },
+      adminTheme: {
+        ...current.adminTheme,
+        shellBg: payload.shellBg ?? current.adminTheme.shellBg,
+        sidebarBg: payload.sidebarBg ?? current.adminTheme.sidebarBg,
+        panel: payload.panel ?? current.adminTheme.panel,
+        panelStrong: payload.panelStrong ?? current.adminTheme.panelStrong,
+        primary: payload.primary ?? current.adminTheme.primary,
+        primaryStrong: payload.primaryStrong ?? current.adminTheme.primaryStrong,
+        text: payload.text ?? current.adminTheme.text,
+        textSoft: payload.textSoft ?? current.adminTheme.textSoft
+      }
+    };
+
+    const saved = await this.saveSettings(nextState);
+    return saved.adminTheme;
   }
 
   async uploadAsset(request: FastifyRequest, type: string) {
@@ -159,6 +203,9 @@ export class SiteSettingsService {
       assets: {
         ...current.assets,
         ...(type === "logo" ? { logoUrl: assetUrl } : { faviconUrl: assetUrl })
+      },
+      adminTheme: {
+        ...current.adminTheme
       }
     };
 

@@ -125,5 +125,15 @@ export const siteSettings = {
   assets: {
     logoUrl: null as string | null,
     faviconUrl: null as string | null
+  },
+  adminTheme: {
+    shellBg: "#08111f",
+    sidebarBg: "#0a1220",
+    panel: "#121a2e",
+    panelStrong: "#17213a",
+    primary: "#d69b00",
+    primaryStrong: "#b88100",
+    text: "#f8fafc",
+    textSoft: "#9fb0d1"
   }
 };

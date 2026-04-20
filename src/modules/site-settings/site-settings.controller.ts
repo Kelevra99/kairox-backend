@@ -2,6 +2,7 @@ import { Body, Controller, Get, Patch, Post, Query, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { SiteSettingsService } from "./site-settings.service";
 import { UpdateSiteSettingsDto } from "./dto/update-site-settings.dto";
+import { UpdateAdminThemeDto } from "./dto/update-admin-theme.dto";
 
 @Controller("site")
 export class SiteSettingsController {
@@ -15,6 +16,16 @@ export class SiteSettingsController {
   @Patch("settings")
   updateSettings(@Body() payload: UpdateSiteSettingsDto) {
     return this.siteSettingsService.updateSettings(payload);
+  }
+
+  @Get("admin-settings")
+  getAdminSettings() {
+    return this.siteSettingsService.getAdminSettings();
+  }
+
+  @Patch("admin-settings")
+  updateAdminSettings(@Body() payload: UpdateAdminThemeDto) {
+    return this.siteSettingsService.updateAdminSettings(payload);
   }
 
   @Post("assets")
