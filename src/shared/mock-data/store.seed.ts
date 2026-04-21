@@ -113,12 +113,6 @@ export const siteSettings = {
     primary: "#d69b00",
     primaryStrong: "#b88100",
 
-    buttonUseGradient: false,
-    buttonBg: "#d69b00",
-    buttonBgTo: "#b88100",
-    buttonGradientAngle: 90,
-    buttonText: "#0b1020",
-
     text: "#f8fafc",
     textSoft: "#9fb0d1"
   },
@@ -175,6 +169,11 @@ export const siteSettings = {
     panelStrong: "#17213a",
     primary: "#d69b00",
     primaryStrong: "#b88100",
+    buttonUseGradient: false,
+    buttonBg: "#d69b00",
+    buttonBgTo: "#b88100",
+    buttonGradientAngle: 90,
+    buttonText: "#0b1020",
     text: "#f8fafc",
     textSoft: "#9fb0d1",
 
