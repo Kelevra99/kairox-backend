@@ -175,6 +175,7 @@ export const siteSettings = {
     buttonGradientAngle: 90,
     buttonText: "#0b1020",
     text: "#f8fafc",
+    contentText: "#f8fafc",
     textSoft: "#9fb0d1",
     inputText: "#f8fafc",
     headingText: "#f8fafc",

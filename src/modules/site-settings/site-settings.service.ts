@@ -343,6 +343,7 @@ export class SiteSettingsService {
         buttonText: this.normalizeHex(source.buttonText, current.adminTheme.buttonText),
 
         text: this.normalizeHex(source.text, current.adminTheme.text),
+        contentText: this.normalizeHex(source.contentText, current.adminTheme.contentText),
         textSoft: this.normalizeHex(source.textSoft, current.adminTheme.textSoft),
         inputText: this.normalizeHex(source.inputText, current.adminTheme.inputText),
         headingText: this.normalizeHex(source.headingText, current.adminTheme.headingText),
