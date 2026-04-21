@@ -176,6 +176,8 @@ export const siteSettings = {
     buttonText: "#0b1020",
     text: "#f8fafc",
     textSoft: "#9fb0d1",
+    inputText: "#f8fafc",
+    headingText: "#f8fafc",
 
     inputBg: "#0b1020",
     layoutGap: 12,

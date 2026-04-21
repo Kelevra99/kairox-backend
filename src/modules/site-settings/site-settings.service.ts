@@ -344,6 +344,8 @@ export class SiteSettingsService {
 
         text: this.normalizeHex(source.text, current.adminTheme.text),
         textSoft: this.normalizeHex(source.textSoft, current.adminTheme.textSoft),
+        inputText: this.normalizeHex(source.inputText, current.adminTheme.inputText),
+        headingText: this.normalizeHex(source.headingText, current.adminTheme.headingText),
 
         inputBg: this.normalizeHex(source.inputBg, current.adminTheme.inputBg),
         layoutGap: this.normalizeSize(source.layoutGap, current.adminTheme.layoutGap, 4, 40),
