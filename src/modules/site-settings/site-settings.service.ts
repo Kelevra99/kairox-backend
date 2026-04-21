@@ -25,19 +25,20 @@ export class SiteSettingsService {
   ) {}
 
   private normalizeHex(value: unknown, fallback: string) {
-    if (typeof value !== "string") {
-      return fallback;
-    }
-
+    if (typeof value !== "string") return fallback;
     const normalized = value.trim();
     return /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(normalized) ? normalized : fallback;
   }
 
   private normalizeString(value: unknown, fallback: string) {
-    if (typeof value !== "string") {
-      return fallback;
-    }
+    if (typeof value !== "string") return fallback;
+    const normalized = value.trim();
+    return normalized ? normalized : fallback;
+  }
 
+  private normalizeNullableString(value: unknown, fallback: string | null) {
+    if (value === null) return null;
+    if (typeof value !== "string") return fallback;
     const normalized = value.trim();
     return normalized ? normalized : fallback;
   }
@@ -54,15 +55,27 @@ export class SiteSettingsService {
           ? Number.parseFloat(value)
           : Number.NaN;
 
-    if (!Number.isFinite(parsed)) {
-      return fallback;
-    }
+    if (!Number.isFinite(parsed)) return fallback;
 
     const rounded = Math.round(parsed);
-
     if (rounded < 0) return 0;
     if (rounded > 360) return 360;
+    return rounded;
+  }
 
+  private normalizeSize(value: unknown, fallback: number, min = 0, max = 200) {
+    const parsed =
+      typeof value === "number"
+        ? value
+        : typeof value === "string"
+          ? Number.parseFloat(value)
+          : Number.NaN;
+
+    if (!Number.isFinite(parsed)) return fallback;
+
+    const rounded = Math.round(parsed);
+    if (rounded < min) return min;
+    if (rounded > max) return max;
     return rounded;
   }
 
@@ -76,6 +89,7 @@ export class SiteSettingsService {
     const candidate = value as Partial<SiteSettingsState> & {
       colors?: Partial<SiteSettingsState["colors"]>;
       appearance?: Partial<SiteSettingsState["appearance"]>;
+      typography?: Partial<SiteSettingsState["typography"]>;
       modules?: Partial<SiteSettingsState["modules"]>;
       assets?: Partial<SiteSettingsState["assets"]>;
       adminTheme?: Partial<SiteSettingsState["adminTheme"]>;
@@ -91,6 +105,10 @@ export class SiteSettingsService {
       appearance: {
         ...base.appearance,
         ...candidate.appearance
+      },
+      typography: {
+        ...base.typography,
+        ...candidate.typography
       },
       modules: {
         ...base.modules,
@@ -151,16 +169,14 @@ export class SiteSettingsService {
     const raw = payload as Record<string, unknown>;
     const colors = isRecord(payload.colors) ? payload.colors : {};
     const appearance = isRecord(payload.appearance) ? payload.appearance : {};
+    const typography = isRecord(payload.typography) ? payload.typography : {};
 
     const nextState: SiteSettingsState = {
       ...current,
       brandName: this.normalizeString(payload.brandName, current.brandName),
       colors: {
         ...current.colors,
-        bg: this.normalizeHex(
-          colors.bg ?? appearance.pageBg ?? raw.bg,
-          current.colors.bg
-        ),
+        bg: this.normalizeHex(colors.bg ?? appearance.pageBg ?? raw.bg, current.colors.bg),
         panel: this.normalizeHex(
           colors.panel ?? appearance.surfaceBg ?? raw.panel,
           current.colors.panel
@@ -210,10 +226,7 @@ export class SiteSettingsService {
           current.appearance.surfaceUseGradient
         ),
         surfaceBg: this.normalizeHex(appearance.surfaceBg, current.appearance.surfaceBg),
-        surfaceBgTo: this.normalizeHex(
-          appearance.surfaceBgTo,
-          current.appearance.surfaceBgTo
-        ),
+        surfaceBgTo: this.normalizeHex(appearance.surfaceBgTo, current.appearance.surfaceBgTo),
         surfaceGradientAngle: this.normalizeAngle(
           appearance.surfaceGradientAngle,
           current.appearance.surfaceGradientAngle
@@ -230,6 +243,41 @@ export class SiteSettingsService {
           current.appearance.buttonGradientAngle
         ),
         buttonText: this.normalizeHex(appearance.buttonText, current.appearance.buttonText)
+      },
+      typography: {
+        ...current.typography,
+        pageHeadingColor: this.normalizeHex(
+          typography.pageHeadingColor,
+          current.typography.pageHeadingColor
+        ),
+        pageTextColor: this.normalizeHex(
+          typography.pageTextColor,
+          current.typography.pageTextColor
+        ),
+        blockHeadingColor: this.normalizeHex(
+          typography.blockHeadingColor,
+          current.typography.blockHeadingColor
+        ),
+        blockTextColor: this.normalizeHex(
+          typography.blockTextColor,
+          current.typography.blockTextColor
+        ),
+        bodyFontFamily: this.normalizeString(
+          typography.bodyFontFamily,
+          current.typography.bodyFontFamily
+        ),
+        headingFontFamily: this.normalizeString(
+          typography.headingFontFamily,
+          current.typography.headingFontFamily
+        ),
+        bodyFontUrl: this.normalizeNullableString(
+          typography.bodyFontUrl,
+          current.typography.bodyFontUrl
+        ),
+        headingFontUrl: this.normalizeNullableString(
+          typography.headingFontUrl,
+          current.typography.headingFontUrl
+        )
       },
       modules: {
         ...current.modules
@@ -252,6 +300,9 @@ export class SiteSettingsService {
 
   async updateAdminSettings(payload: UpdateAdminThemeDto) {
     const current = await this.ensureSettings();
+    const source = isRecord(payload.settings)
+      ? payload.settings
+      : (payload as unknown as Record<string, unknown>);
 
     const nextState: SiteSettingsState = {
       ...current,
@@ -261,6 +312,9 @@ export class SiteSettingsService {
       appearance: {
         ...current.appearance
       },
+      typography: {
+        ...current.typography
+      },
       modules: {
         ...current.modules
       },
@@ -269,14 +323,53 @@ export class SiteSettingsService {
       },
       adminTheme: {
         ...current.adminTheme,
-        shellBg: payload.shellBg ?? current.adminTheme.shellBg,
-        sidebarBg: payload.sidebarBg ?? current.adminTheme.sidebarBg,
-        panel: payload.panel ?? current.adminTheme.panel,
-        panelStrong: payload.panelStrong ?? current.adminTheme.panelStrong,
-        primary: payload.primary ?? current.adminTheme.primary,
-        primaryStrong: payload.primaryStrong ?? current.adminTheme.primaryStrong,
-        text: payload.text ?? current.adminTheme.text,
-        textSoft: payload.textSoft ?? current.adminTheme.textSoft
+        shellBg: this.normalizeHex(source.shellBg, current.adminTheme.shellBg),
+        sidebarBg: this.normalizeHex(source.sidebarBg, current.adminTheme.sidebarBg),
+        panel: this.normalizeHex(source.panel, current.adminTheme.panel),
+        panelStrong: this.normalizeHex(source.panelStrong, current.adminTheme.panelStrong),
+        primary: this.normalizeHex(source.primary, current.adminTheme.primary),
+        primaryStrong: this.normalizeHex(source.primaryStrong, current.adminTheme.primaryStrong),
+        text: this.normalizeHex(source.text, current.adminTheme.text),
+        textSoft: this.normalizeHex(source.textSoft, current.adminTheme.textSoft),
+
+        inputBg: this.normalizeHex(source.inputBg, current.adminTheme.inputBg),
+        layoutGap: this.normalizeSize(source.layoutGap, current.adminTheme.layoutGap, 4, 40),
+        panelPadding: this.normalizeSize(source.panelPadding, current.adminTheme.panelPadding, 4, 40),
+        controlPaddingX: this.normalizeSize(
+          source.controlPaddingX,
+          current.adminTheme.controlPaddingX,
+          4,
+          40
+        ),
+        controlPaddingY: this.normalizeSize(
+          source.controlPaddingY,
+          current.adminTheme.controlPaddingY,
+          2,
+          24
+        ),
+        controlHeight: this.normalizeSize(
+          source.controlHeight,
+          current.adminTheme.controlHeight,
+          28,
+          90
+        ),
+
+        bodyFontFamily: this.normalizeString(
+          source.bodyFontFamily,
+          current.adminTheme.bodyFontFamily
+        ),
+        headingFontFamily: this.normalizeString(
+          source.headingFontFamily,
+          current.adminTheme.headingFontFamily
+        ),
+        bodyFontUrl: this.normalizeNullableString(
+          source.bodyFontUrl,
+          current.adminTheme.bodyFontUrl
+        ),
+        headingFontUrl: this.normalizeNullableString(
+          source.headingFontUrl,
+          current.adminTheme.headingFontUrl
+        )
       }
     };
 
@@ -285,35 +378,52 @@ export class SiteSettingsService {
   }
 
   async uploadAsset(request: FastifyRequest, type: string) {
-    if (type !== "logo" && type !== "favicon") {
-      throw new BadRequestException("Unknown asset type. Use logo or favicon.");
-    }
-
     const file = await request.file();
 
     if (!file) {
       throw new BadRequestException("File is required.");
     }
 
-    if (!file.mimetype.startsWith("image/")) {
-      throw new BadRequestException("Only image uploads are allowed.");
+    const imageTypes = new Set(["logo", "favicon"]);
+    const fontTypes = new Set([
+      "site-body-font",
+      "site-heading-font",
+      "admin-body-font",
+      "admin-heading-font"
+    ]);
+
+    if (!imageTypes.has(type) && !fontTypes.has(type)) {
+      throw new BadRequestException("Unknown upload type.");
     }
 
     const extension = this.resolveExtension(file.filename, file.mimetype);
 
     if (!extension) {
-      throw new BadRequestException("Unsupported image format.");
+      throw new BadRequestException("Unsupported file format.");
+    }
+
+    if (imageTypes.has(type) && !file.mimetype.startsWith("image/")) {
+      throw new BadRequestException("Only image uploads are allowed for this field.");
+    }
+
+    if (fontTypes.has(type) && !this.isFontExtension(extension)) {
+      throw new BadRequestException("Only .woff2, .woff, .ttf, .otf are allowed for fonts.");
     }
 
     const buffer = await file.toBuffer();
 
-    const directory = join(process.cwd(), "uploads", "site");
+    const directory = fontTypes.has(type)
+      ? join(process.cwd(), "uploads", "fonts")
+      : join(process.cwd(), "uploads", "site");
+
     await mkdir(directory, { recursive: true });
 
     const filename = `${type}-${Date.now()}${extension}`;
     await writeFile(join(directory, filename), buffer);
 
-    const assetUrl = `${this.config.assetBaseUrl}/uploads/site/${filename}`;
+    const assetUrl = fontTypes.has(type)
+      ? `${this.config.assetBaseUrl}/uploads/fonts/${filename}`
+      : `${this.config.assetBaseUrl}/uploads/site/${filename}`;
 
     const current = await this.ensureSettings();
 
@@ -325,25 +435,58 @@ export class SiteSettingsService {
       appearance: {
         ...current.appearance
       },
+      typography: {
+        ...current.typography
+      },
       modules: {
         ...current.modules
       },
       assets: {
-        ...current.assets,
-        ...(type === "logo" ? { logoUrl: assetUrl } : { faviconUrl: assetUrl })
+        ...current.assets
       },
       adminTheme: {
         ...current.adminTheme
       }
     };
 
+    if (type === "logo") {
+      nextState.assets.logoUrl = assetUrl;
+    } else if (type === "favicon") {
+      nextState.assets.faviconUrl = assetUrl;
+    } else if (type === "site-body-font") {
+      nextState.typography.bodyFontUrl = assetUrl;
+    } else if (type === "site-heading-font") {
+      nextState.typography.headingFontUrl = assetUrl;
+    } else if (type === "admin-body-font") {
+      nextState.adminTheme.bodyFontUrl = assetUrl;
+    } else if (type === "admin-heading-font") {
+      nextState.adminTheme.headingFontUrl = assetUrl;
+    }
+
     return this.saveSettings(nextState);
+  }
+
+  private isFontExtension(extension: string) {
+    return [".woff2", ".woff", ".ttf", ".otf"].includes(extension);
   }
 
   private resolveExtension(filename: string | undefined, mimeType: string) {
     const fromName = extname(filename ?? "").toLowerCase();
 
-    if ([".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico"].includes(fromName)) {
+    if (
+      [
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".webp",
+        ".svg",
+        ".ico",
+        ".woff2",
+        ".woff",
+        ".ttf",
+        ".otf"
+      ].includes(fromName)
+    ) {
       return fromName === ".jpeg" ? ".jpg" : fromName;
     }
 
@@ -353,9 +496,17 @@ export class SiteSettingsService {
       "image/webp": ".webp",
       "image/svg+xml": ".svg",
       "image/x-icon": ".ico",
-      "image/vnd.microsoft.icon": ".ico"
+      "image/vnd.microsoft.icon": ".ico",
+      "font/woff2": ".woff2",
+      "font/woff": ".woff",
+      "font/ttf": ".ttf",
+      "font/otf": ".otf",
+      "application/font-woff": ".woff",
+      "application/x-font-ttf": ".ttf",
+      "application/x-font-opentype": ".otf",
+      "application/octet-stream": fromName || ""
     };
 
-    return byMime[mimeType] ?? null;
+    return byMime[mimeType] || null;
   }
 }

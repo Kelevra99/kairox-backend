@@ -13,4 +13,8 @@ export class UpdateSiteSettingsDto {
   @IsOptional()
   @Allow()
   appearance?: Record<string, unknown>;
+
+  @IsOptional()
+  @Allow()
+  typography?: Record<string, unknown>;
 }

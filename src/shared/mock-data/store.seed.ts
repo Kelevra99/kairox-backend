@@ -139,6 +139,17 @@ export const siteSettings = {
     buttonGradientAngle: 90,
     buttonText: "#0b1020"
   },
+  typography: {
+    pageHeadingColor: "#f8fafc",
+    pageTextColor: "#9fb0d1",
+    blockHeadingColor: "#f8fafc",
+    blockTextColor: "#9fb0d1",
+
+    bodyFontFamily: "Arial, Helvetica, sans-serif",
+    headingFontFamily: "Arial, Helvetica, sans-serif",
+    bodyFontUrl: null as string | null,
+    headingFontUrl: null as string | null
+  },
   modules: {
     hero: true,
     categories: true,
@@ -158,6 +169,18 @@ export const siteSettings = {
     primary: "#d69b00",
     primaryStrong: "#b88100",
     text: "#f8fafc",
-    textSoft: "#9fb0d1"
+    textSoft: "#9fb0d1",
+
+    inputBg: "#0b1020",
+    layoutGap: 12,
+    panelPadding: 12,
+    controlPaddingX: 12,
+    controlPaddingY: 8,
+    controlHeight: 42,
+
+    bodyFontFamily: "Arial, Helvetica, sans-serif",
+    headingFontFamily: "Arial, Helvetica, sans-serif",
+    bodyFontUrl: null as string | null,
+    headingFontUrl: null as string | null
   }
 };
