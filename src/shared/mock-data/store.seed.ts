@@ -148,6 +148,18 @@ export const siteSettings = {
 
     bodyFontFamily: "Arial, Helvetica, sans-serif",
     headingFontFamily: "Arial, Helvetica, sans-serif",
+
+    bodyFontSize: 16,
+    bodyLineHeight: 1.6,
+    bodyFontWeight: 400,
+    bodyItalic: false,
+
+    headingFontSize: 42,
+    headingLineHeight: 1.2,
+    headingFontWeight: 700,
+    headingLetterSpacing: 0,
+    headingUppercase: false,
+
     bodyFontUrl: null as string | null,
     headingFontUrl: null as string | null
   },
@@ -189,6 +201,18 @@ export const siteSettings = {
 
     bodyFontFamily: "Arial, Helvetica, sans-serif",
     headingFontFamily: "Arial, Helvetica, sans-serif",
+
+    bodyFontSize: 14,
+    bodyLineHeight: 1.5,
+    bodyFontWeight: 400,
+    bodyItalic: false,
+
+    headingFontSize: 32,
+    headingLineHeight: 1.2,
+    headingFontWeight: 700,
+    headingLetterSpacing: 0,
+    headingUppercase: false,
+
     bodyFontUrl: null as string | null,
     headingFontUrl: null as string | null
   }

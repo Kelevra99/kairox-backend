@@ -270,6 +270,56 @@ export class SiteSettingsService {
           typography.headingFontFamily,
           current.typography.headingFontFamily
         ),
+        bodyFontSize: this.normalizeSize(
+          typography.bodyFontSize,
+          current.typography.bodyFontSize,
+          10,
+          32
+        ),
+        bodyLineHeight: this.normalizeSize(
+          typography.bodyLineHeight,
+          current.typography.bodyLineHeight,
+          1,
+          3
+        ),
+        bodyFontWeight: this.normalizeSize(
+          typography.bodyFontWeight,
+          current.typography.bodyFontWeight,
+          100,
+          900
+        ),
+        bodyItalic: this.normalizeBoolean(
+          typography.bodyItalic,
+          current.typography.bodyItalic
+        ),
+        headingFontSize: this.normalizeSize(
+          typography.headingFontSize,
+          current.typography.headingFontSize,
+          14,
+          72
+        ),
+        headingLineHeight: this.normalizeSize(
+          typography.headingLineHeight,
+          current.typography.headingLineHeight,
+          1,
+          3
+        ),
+        headingFontWeight: this.normalizeSize(
+          typography.headingFontWeight,
+          current.typography.headingFontWeight,
+          100,
+          900
+        ),
+        headingLetterSpacing: this.normalizeSize(
+          typography.headingLetterSpacing,
+          current.typography.headingLetterSpacing,
+          -2,
+          20
+        ),
+        headingUppercase: this.normalizeBoolean(
+          typography.headingUppercase,
+          current.typography.headingUppercase
+        ),
         bodyFontUrl: this.normalizeNullableString(
           typography.bodyFontUrl,
           current.typography.bodyFontUrl
@@ -377,6 +427,56 @@ export class SiteSettingsService {
         headingFontFamily: this.normalizeString(
           source.headingFontFamily,
           current.adminTheme.headingFontFamily
+        ),
+        bodyFontSize: this.normalizeSize(
+          source.bodyFontSize,
+          current.adminTheme.bodyFontSize,
+          10,
+          32
+        ),
+        bodyLineHeight: this.normalizeSize(
+          source.bodyLineHeight,
+          current.adminTheme.bodyLineHeight,
+          1,
+          3
+        ),
+        bodyFontWeight: this.normalizeSize(
+          source.bodyFontWeight,
+          current.adminTheme.bodyFontWeight,
+          100,
+          900
+        ),
+        bodyItalic: this.normalizeBoolean(
+          source.bodyItalic,
+          current.adminTheme.bodyItalic
+        ),
+        headingFontSize: this.normalizeSize(
+          source.headingFontSize,
+          current.adminTheme.headingFontSize,
+          14,
+          72
+        ),
+        headingLineHeight: this.normalizeSize(
+          source.headingLineHeight,
+          current.adminTheme.headingLineHeight,
+          1,
+          3
+        ),
+        headingFontWeight: this.normalizeSize(
+          source.headingFontWeight,
+          current.adminTheme.headingFontWeight,
+          100,
+          900
+        ),
+        headingLetterSpacing: this.normalizeSize(
+          source.headingLetterSpacing,
+          current.adminTheme.headingLetterSpacing,
+          -2,
+          20
+        ),
+        headingUppercase: this.normalizeBoolean(
+          source.headingUppercase,
+          current.adminTheme.headingUppercase
         ),
         bodyFontUrl: this.normalizeNullableString(
           source.bodyFontUrl,
