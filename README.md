@@ -30,10 +30,23 @@
 cp .env.example .env
 docker compose up -d
 npm install
+npm run fonts:bootstrap
 npx prisma generate
 npx prisma migrate dev --name init
 npm run start:dev
 ```
+
+### Важно про шрифты
+Команда `npm run fonts:bootstrap` обязательна при первой установке проекта.
+
+Она:
+- скачивает Google Fonts, которые используются сайтом и редакторами дизайна
+- сохраняет их локально в `../frontend/public/fonts/google`
+- генерирует локальный CSS-файл `fonts.css` и `manifest.json`
+
+Без этого шага кастомные шрифты могут не подтянуться или будут заменяться системными шрифтами.
+
+Если шрифты уже были загружены ранее, команду можно запускать повторно — недостающие файлы будут докачаны, существующие переиспользуются.
 
 Открыть:
 - API: http://localhost:3101/api/v1
@@ -44,6 +57,19 @@ npm run start:dev
 PORT=3101
 FRONTEND_URL=http://localhost:3100
 ```
+
+## Полный первый запуск с нуля
+```bash
+cp .env.example .env
+docker compose up -d
+npm install
+npm run fonts:bootstrap
+npx prisma generate
+npx prisma migrate dev --name init
+npm run start:dev
+```
+
+После этого отдельно запусти фронтенд из папки `frontend`, чтобы сайт и админка использовали уже локально сохранённые шрифты.
 
 ## Почему такая база
 Пользователь просил быстрый локальный старт с перспективой роста:
