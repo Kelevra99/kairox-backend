@@ -329,6 +329,19 @@ export class SiteSettingsService {
         panelStrong: this.normalizeHex(source.panelStrong, current.adminTheme.panelStrong),
         primary: this.normalizeHex(source.primary, current.adminTheme.primary),
         primaryStrong: this.normalizeHex(source.primaryStrong, current.adminTheme.primaryStrong),
+
+        buttonUseGradient: this.normalizeBoolean(
+          source.buttonUseGradient,
+          current.adminTheme.buttonUseGradient
+        ),
+        buttonBg: this.normalizeHex(source.buttonBg, current.adminTheme.buttonBg),
+        buttonBgTo: this.normalizeHex(source.buttonBgTo, current.adminTheme.buttonBgTo),
+        buttonGradientAngle: this.normalizeAngle(
+          source.buttonGradientAngle,
+          current.adminTheme.buttonGradientAngle
+        ),
+        buttonText: this.normalizeHex(source.buttonText, current.adminTheme.buttonText),
+
         text: this.normalizeHex(source.text, current.adminTheme.text),
         textSoft: this.normalizeHex(source.textSoft, current.adminTheme.textSoft),
 
