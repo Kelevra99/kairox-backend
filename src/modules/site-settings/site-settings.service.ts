@@ -572,7 +572,11 @@ export class SiteSettingsService {
         );
       }
 
-      const source = sharp(buffer, { failOn: "error" }).rotate();
+      const source = sharp(buffer, {
+        failOn: "none",
+        sequentialRead: true
+      }).rotate();
+
       const metadata = await source.metadata();
 
       const originalWidth = metadata.width ?? 0;
@@ -584,72 +588,108 @@ export class SiteSettingsService {
 
       const warnings = this.buildCategoryImageWarnings(originalWidth, originalHeight);
 
-      const resizedForMeta = source
-        .clone()
-        .toColourspace("srgb")
-        .ensureAlpha()
-        .resize({
-          width: 1200,
-          height: 1200,
-          fit: "inside",
-          withoutEnlargement: true
-        });
+      try {
+        const resizedForMeta = source
+          .clone()
+          .toColourspace("srgb")
+          .ensureAlpha()
+          .resize({
+            width: 1200,
+            height: 1200,
+            fit: "inside",
+            withoutEnlargement: true
+          });
 
-      const resizedMeta = await resizedForMeta.metadata();
-      const contentWidth = resizedMeta.width ?? originalWidth;
-      const contentHeight = resizedMeta.height ?? originalHeight;
+        const resizedMeta = await resizedForMeta.metadata();
+        const contentWidth = resizedMeta.width ?? originalWidth;
+        const contentHeight = resizedMeta.height ?? originalHeight;
 
-      const left = Math.max(0, Math.floor((1200 - contentWidth) / 2));
-      const right = Math.max(0, 1200 - contentWidth - left);
-      const top = Math.max(0, Math.floor((1200 - contentHeight) / 2));
-      const bottom = Math.max(0, 1200 - contentHeight - top);
+        const left = Math.max(0, Math.floor((1200 - contentWidth) / 2));
+        const right = Math.max(0, 1200 - contentWidth - left);
+        const top = Math.max(0, Math.floor((1200 - contentHeight) / 2));
+        const bottom = Math.max(0, 1200 - contentHeight - top);
 
-      const processedBuffer = await source
-        .clone()
-        .toColourspace("srgb")
-        .ensureAlpha()
-        .resize({
-          width: 1200,
-          height: 1200,
-          fit: "inside",
-          withoutEnlargement: true
-        })
-        .extend({
-          top,
-          bottom,
-          left,
-          right,
-          background: { r: 0, g: 0, b: 0, alpha: 0 }
-        })
-        .webp({
-          quality: 82,
-          alphaQuality: 90
-        })
-        .toBuffer();
+        const processedBuffer = await source
+          .clone()
+          .toColourspace("srgb")
+          .ensureAlpha()
+          .resize({
+            width: 1200,
+            height: 1200,
+            fit: "inside",
+            withoutEnlargement: true
+          })
+          .extend({
+            top,
+            bottom,
+            left,
+            right,
+            background: { r: 0, g: 0, b: 0, alpha: 0 }
+          })
+          .webp({
+            quality: 82,
+            alphaQuality: 90
+          })
+          .toBuffer();
 
-      const directory = join(process.cwd(), "uploads", "site");
-      await mkdir(directory, { recursive: true });
+        const directory = join(process.cwd(), "uploads", "site");
+        await mkdir(directory, { recursive: true });
 
-      const filename = `${type}-${Date.now()}.webp`;
-      await writeFile(join(directory, filename), processedBuffer);
+        const filename = `${type}-${Date.now()}.webp`;
+        await writeFile(join(directory, filename), processedBuffer);
 
-      const assetUrl = `${this.config.assetBaseUrl}/uploads/site/${filename}`;
+        const assetUrl = `${this.config.assetBaseUrl}/uploads/site/${filename}`;
 
-      return {
-        assetUrl,
-        warnings,
-        imageMeta: {
-          originalWidth,
-          originalHeight,
-          contentWidth,
-          contentHeight,
-          canvasWidth: 1200,
-          canvasHeight: 1200,
-          format: "webp",
-          recommended: "1200x1200",
-          minimumRecommended: "800x800"
-        }
-      };
+        return {
+          assetUrl,
+          warnings,
+          imageMeta: {
+            originalWidth,
+            originalHeight,
+            contentWidth,
+            contentHeight,
+            canvasWidth: 1200,
+            canvasHeight: 1200,
+            format: "webp",
+            recommended: "1200x1200",
+            minimumRecommended: "800x800"
+          }
+        };
+      } catch (error) {
+        const directory = join(process.cwd(), "uploads", "site");
+        await mkdir(directory, { recursive: true });
+
+        const fallbackExtension =
+          file.mimetype === "image/jpeg"
+            ? ".jpg"
+            : file.mimetype === "image/webp"
+              ? ".webp"
+              : ".png";
+
+        const filename = `${type}-${Date.now()}${fallbackExtension}`;
+        await writeFile(join(directory, filename), buffer);
+
+        const assetUrl = `${this.config.assetBaseUrl}/uploads/site/${filename}`;
+
+        return {
+          assetUrl,
+          warnings: [
+            ...warnings,
+            "Автоматически обработать это изображение не удалось, поэтому мы сохранили исходный файл без преобразования. Рекомендуется пересохранить изображение в JPG или WebP, либо использовать другой PNG."
+          ],
+          imageMeta: {
+            originalWidth,
+            originalHeight,
+            contentWidth: originalWidth,
+            contentHeight: originalHeight,
+            canvasWidth: originalWidth,
+            canvasHeight: originalHeight,
+            format: fallbackExtension.replace(".", ""),
+            recommended: "1200x1200",
+            minimumRecommended: "800x800"
+          }
+        };
+      }
     }
 
     const extension = this.resolveExtension(file.filename, file.mimetype);
