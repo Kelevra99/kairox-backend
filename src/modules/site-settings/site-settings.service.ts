@@ -584,35 +584,36 @@ export class SiteSettingsService {
 
       const warnings = this.buildCategoryImageWarnings(originalWidth, originalHeight);
 
-      const resizedResult = await sharp(buffer, { failOn: "none" })
-        .rotate()
+      const resizedForMeta = source
+        .clone()
+        .toColourspace("srgb")
+        .ensureAlpha()
         .resize({
           width: 1200,
           height: 1200,
           fit: "inside",
           withoutEnlargement: true
-        })
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+        });
 
-      const resizedBuffer = resizedResult.data;
-      const contentWidth = resizedResult.info.width ?? originalWidth;
-      const contentHeight = resizedResult.info.height ?? originalHeight;
-      const contentChannels = resizedResult.info.channels ?? 4;
+      const resizedMeta = await resizedForMeta.metadata();
+      const contentWidth = resizedMeta.width ?? originalWidth;
+      const contentHeight = resizedMeta.height ?? originalHeight;
 
       const left = Math.max(0, Math.floor((1200 - contentWidth) / 2));
       const right = Math.max(0, 1200 - contentWidth - left);
       const top = Math.max(0, Math.floor((1200 - contentHeight) / 2));
       const bottom = Math.max(0, 1200 - contentHeight - top);
 
-      const processedBuffer = await sharp(resizedBuffer, {
-        raw: {
-          width: contentWidth,
-          height: contentHeight,
-          channels: contentChannels
-        }
-      })
+      const processedBuffer = await source
+        .clone()
+        .toColourspace("srgb")
+        .ensureAlpha()
+        .resize({
+          width: 1200,
+          height: 1200,
+          fit: "inside",
+          withoutEnlargement: true
+        })
         .extend({
           top,
           bottom,
@@ -735,7 +736,7 @@ export class SiteSettingsService {
       );
     } else if (diff > 20) {
       warnings.push(
-        "Изображение не квадратное. Мы автоматически уменьшили его по пропорциям и добавили прозрачные поля до формата 1200×1200. Для лучшего отображения рекомендуется квадрат 1200×1200 px."
+        "Изображение не квадратное. Мы автоматически уменьшили его по пропорциям и добавили прозрачные поля до формата 1200×1200. Это может повлиять на отображение в некоторых шаблонах. Для лучшего результата рекомендуется квадрат 1200×1200 px."
       );
     }
 
