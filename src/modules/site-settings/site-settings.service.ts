@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { mkdir, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import type { FastifyRequest } from "fastify";
+import sharp = require("sharp");
 import { Prisma, ShopStatus, ShopDomainType, DomainVerificationStatus } from "@prisma/client";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { AppConfigService } from "@/modules/config/app-config.service";
@@ -559,7 +560,11 @@ export class SiteSettingsService {
     const buffer = await file.toBuffer();
 
     if (type === "category-image") {
-      const allowedMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+      const allowedMimeTypes = new Set([
+        "image/png",
+        "image/jpeg",
+        "image/webp"
+      ]);
 
       if (!allowedMimeTypes.has(file.mimetype)) {
         throw new BadRequestException(
@@ -567,9 +572,8 @@ export class SiteSettingsService {
         );
       }
 
-      const sharp = (await import("sharp")).default;
-      const image = sharp(buffer, { failOn: "error" });
-      const metadata = await image.metadata();
+      const source = sharp(buffer, { failOn: "error" }).rotate();
+      const metadata = await source.metadata();
 
       const originalWidth = metadata.width ?? 0;
       const originalHeight = metadata.height ?? 0;
@@ -578,21 +582,18 @@ export class SiteSettingsService {
         throw new BadRequestException("Не удалось определить размеры изображения.");
       }
 
-      if (originalWidth < 800 || originalHeight < 800) {
-        throw new BadRequestException(
-          "Изображение слишком маленькое. Минимальный размер: 800×800 px."
-        );
-      }
+      const warnings = this.buildCategoryImageWarnings(originalWidth, originalHeight);
 
-      const processedBuffer = await image
+      const processedBuffer = await source
         .resize({
-          width: 1600,
-          height: 1600,
-          fit: "inside",
-          withoutEnlargement: true
+          width: 1200,
+          height: 1200,
+          fit: "contain",
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
         })
         .webp({
-          quality: 82
+          quality: 82,
+          alphaQuality: 90
         })
         .toBuffer();
 
@@ -605,19 +606,18 @@ export class SiteSettingsService {
       await writeFile(join(directory, filename), processedBuffer);
 
       const assetUrl = `${this.config.assetBaseUrl}/uploads/site/${filename}`;
-      const warning = this.buildCategoryImageWarning(originalWidth, originalHeight);
 
       return {
         assetUrl,
-        warning,
+        warnings,
         imageMeta: {
           originalWidth,
           originalHeight,
-          width: processedMeta.width ?? originalWidth,
-          height: processedMeta.height ?? originalHeight,
+          width: processedMeta.width ?? 1200,
+          height: processedMeta.height ?? 1200,
           format: "webp",
           recommended: "1200x1200",
-          minimum: "800x800"
+          minimumRecommended: "800x800"
         }
       };
     }
@@ -690,14 +690,27 @@ export class SiteSettingsService {
     return this.saveSettings(nextState);
   }
 
-  private buildCategoryImageWarning(width: number, height: number) {
-    const ratio = width / height;
+  private buildCategoryImageWarnings(width: number, height: number) {
+    const warnings: string[] = [];
+    const diff = Math.abs(width - height);
 
-    if (ratio < 0.95 || ratio > 1.05) {
-      return "Рекомендуется квадратное изображение 1:1. В некоторых шаблонах неквадратное фото может быть обрезано.";
+    if (width < 800 || height < 800) {
+      warnings.push(
+        "Изображение меньше рекомендуемого размера 800×800 px. Оно сохранено, но на сайте может выглядеть менее чётко."
+      );
     }
 
-    return null;
+    if (diff > 0 && diff <= 20) {
+      warnings.push(
+        "Изображение почти квадратное. Мы автоматически привели его к формату 1200×1200 и добавили прозрачные поля."
+      );
+    } else if (diff > 20) {
+      warnings.push(
+        "Изображение не квадратное. Мы автоматически привели его к формату 1200×1200 и добавили прозрачные поля. Для лучшего отображения рекомендуется квадрат 1200×1200 px."
+      );
+    }
+
+    return warnings;
   }
 
   private isFontExtension(extension: string) {
