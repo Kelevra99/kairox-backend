@@ -30,6 +30,21 @@ export class CreateSiteCategoryDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(2048)
+  imageUrl?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  imageAlt?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  imageTitle?: string | null;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(160)
   seoTitle?: string | null;
 

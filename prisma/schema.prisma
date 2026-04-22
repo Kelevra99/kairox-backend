@@ -153,6 +153,9 @@ model SiteCategory {
   title                       String
   slug                        String
   description                 String?
+  imageUrl                    String?
+  imageAlt                    String?
+  imageTitle                  String?
   seoTitle                    String?
   seoDescription              String?
   sortOrder                   Int      @default(0)

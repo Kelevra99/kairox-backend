@@ -544,7 +544,7 @@ export class SiteSettingsService {
       throw new BadRequestException("File is required.");
     }
 
-    const imageTypes = new Set(["logo", "favicon"]);
+    const imageTypes = new Set(["logo", "favicon", "category-image"]);
     const fontTypes = new Set([
       "site-body-font",
       "site-heading-font",
@@ -584,6 +584,10 @@ export class SiteSettingsService {
     const assetUrl = fontTypes.has(type)
       ? `${this.config.assetBaseUrl}/uploads/fonts/${filename}`
       : `${this.config.assetBaseUrl}/uploads/site/${filename}`;
+
+    if (type === "category-image") {
+      return { assetUrl };
+    }
 
     const current = await this.ensureSettings();
 
