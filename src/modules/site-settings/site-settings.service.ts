@@ -556,6 +556,72 @@ export class SiteSettingsService {
       throw new BadRequestException("Unknown upload type.");
     }
 
+    const buffer = await file.toBuffer();
+
+    if (type === "category-image") {
+      const allowedMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+      if (!allowedMimeTypes.has(file.mimetype)) {
+        throw new BadRequestException(
+          "Для фото категории разрешены только JPG, PNG и WebP."
+        );
+      }
+
+      const sharp = (await import("sharp")).default;
+      const image = sharp(buffer, { failOn: "error" });
+      const metadata = await image.metadata();
+
+      const originalWidth = metadata.width ?? 0;
+      const originalHeight = metadata.height ?? 0;
+
+      if (!originalWidth || !originalHeight) {
+        throw new BadRequestException("Не удалось определить размеры изображения.");
+      }
+
+      if (originalWidth < 800 || originalHeight < 800) {
+        throw new BadRequestException(
+          "Изображение слишком маленькое. Минимальный размер: 800×800 px."
+        );
+      }
+
+      const processedBuffer = await image
+        .resize({
+          width: 1600,
+          height: 1600,
+          fit: "inside",
+          withoutEnlargement: true
+        })
+        .webp({
+          quality: 82
+        })
+        .toBuffer();
+
+      const processedMeta = await sharp(processedBuffer).metadata();
+
+      const directory = join(process.cwd(), "uploads", "site");
+      await mkdir(directory, { recursive: true });
+
+      const filename = `${type}-${Date.now()}.webp`;
+      await writeFile(join(directory, filename), processedBuffer);
+
+      const assetUrl = `${this.config.assetBaseUrl}/uploads/site/${filename}`;
+      const warning = this.buildCategoryImageWarning(originalWidth, originalHeight);
+
+      return {
+        assetUrl,
+        warning,
+        imageMeta: {
+          originalWidth,
+          originalHeight,
+          width: processedMeta.width ?? originalWidth,
+          height: processedMeta.height ?? originalHeight,
+          format: "webp",
+          recommended: "1200x1200",
+          minimum: "800x800"
+        }
+      };
+    }
+
     const extension = this.resolveExtension(file.filename, file.mimetype);
 
     if (!extension) {
@@ -570,8 +636,6 @@ export class SiteSettingsService {
       throw new BadRequestException("Only .woff2, .woff, .ttf, .otf are allowed for fonts.");
     }
 
-    const buffer = await file.toBuffer();
-
     const directory = fontTypes.has(type)
       ? join(process.cwd(), "uploads", "fonts")
       : join(process.cwd(), "uploads", "site");
@@ -584,10 +648,6 @@ export class SiteSettingsService {
     const assetUrl = fontTypes.has(type)
       ? `${this.config.assetBaseUrl}/uploads/fonts/${filename}`
       : `${this.config.assetBaseUrl}/uploads/site/${filename}`;
-
-    if (type === "category-image") {
-      return { assetUrl };
-    }
 
     const current = await this.ensureSettings();
 
@@ -628,6 +688,16 @@ export class SiteSettingsService {
     }
 
     return this.saveSettings(nextState);
+  }
+
+  private buildCategoryImageWarning(width: number, height: number) {
+    const ratio = width / height;
+
+    if (ratio < 0.95 || ratio > 1.05) {
+      return "Рекомендуется квадратное изображение 1:1. В некоторых шаблонах неквадратное фото может быть обрезано.";
+    }
+
+    return null;
   }
 
   private isFontExtension(extension: string) {
