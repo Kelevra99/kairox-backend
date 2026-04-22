@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { mkdir, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import type { FastifyRequest } from "fastify";
-import { Prisma } from "@prisma/client";
+import { Prisma, ShopStatus, ShopDomainType, DomainVerificationStatus } from "@prisma/client";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { AppConfigService } from "@/modules/config/app-config.service";
 import { UpdateSiteSettingsDto } from "./dto/update-site-settings.dto";
@@ -11,7 +11,6 @@ import { siteSettings } from "@/shared/mock-data/store.seed";
 
 type SiteSettingsState = typeof siteSettings;
 
-const SITE_SETTINGS_KEY = "global";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -23,6 +22,35 @@ export class SiteSettingsService {
     private readonly prisma: PrismaService,
     private readonly config: AppConfigService
   ) {}
+
+  private readonly defaultShopSlug = "default-store";
+  private readonly defaultPreviewSubdomain = "default-store-preview";
+  private readonly siteSettingsKey = "global";
+
+  private async ensureDefaultShop() {
+    const shop = await this.prisma.shop.upsert({
+      where: { slug: this.defaultShopSlug },
+      update: {},
+      create: {
+        name: "KaiRox Default Store",
+        slug: this.defaultShopSlug,
+        previewSubdomain: this.defaultPreviewSubdomain,
+        status: ShopStatus.DRAFT,
+        isPreviewProtected: true,
+        previewAccessToken: null,
+        domains: {
+          create: {
+            host: `${this.defaultPreviewSubdomain}.localhost`,
+            type: ShopDomainType.PREVIEW,
+            isPrimary: true,
+            verificationStatus: DomainVerificationStatus.VERIFIED
+          }
+        }
+      }
+    });
+
+    return shop;
+  }
 
   private normalizeHex(value: unknown, fallback: string) {
     if (typeof value !== "string") return fallback;
@@ -126,8 +154,15 @@ export class SiteSettingsService {
   }
 
   private async ensureSettings(): Promise<SiteSettingsState> {
+    const shop = await this.ensureDefaultShop();
+
     const existing = await this.prisma.siteTheme.findUnique({
-      where: { key: SITE_SETTINGS_KEY }
+      where: {
+        shopId_key: {
+          shopId: shop.id,
+          key: this.siteSettingsKey
+        }
+      }
     });
 
     if (existing) {
@@ -136,7 +171,8 @@ export class SiteSettingsService {
 
     const created = await this.prisma.siteTheme.create({
       data: {
-        key: SITE_SETTINGS_KEY,
+        shopId: shop.id,
+        key: this.siteSettingsKey,
         value: structuredClone(siteSettings) as Prisma.InputJsonValue
       }
     });
@@ -145,13 +181,21 @@ export class SiteSettingsService {
   }
 
   private async saveSettings(nextState: SiteSettingsState) {
+    const shop = await this.ensureDefaultShop();
+
     const saved = await this.prisma.siteTheme.upsert({
-      where: { key: SITE_SETTINGS_KEY },
+      where: {
+        shopId_key: {
+          shopId: shop.id,
+          key: this.siteSettingsKey
+        }
+      },
       update: {
         value: nextState as Prisma.InputJsonValue
       },
       create: {
-        key: SITE_SETTINGS_KEY,
+        shopId: shop.id,
+        key: this.siteSettingsKey,
         value: nextState as Prisma.InputJsonValue
       }
     });

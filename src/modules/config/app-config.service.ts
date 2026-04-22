@@ -6,7 +6,7 @@ export class AppConfigService {
   constructor(private readonly configService: ConfigService) {}
 
   get port(): number {
-    return this.configService.get<number>("port", 3001);
+    return this.configService.get<number>("port", 3101);
   }
 
   get nodeEnv(): string {
@@ -14,7 +14,7 @@ export class AppConfigService {
   }
 
   get frontendUrl(): string {
-    return this.configService.get<string>("frontendUrl", "http://localhost:3000");
+    return this.configService.get<string>("frontendUrl", "http://localhost:3100");
   }
 
   get databaseUrl(): string {

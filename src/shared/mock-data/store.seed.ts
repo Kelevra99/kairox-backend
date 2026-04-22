@@ -1,3 +1,84 @@
+export const defaultShopSeed = {
+  name: "KaiRox Default Store",
+  slug: "default-store",
+  previewSubdomain: "default-store-preview",
+  status: "DRAFT",
+  isPreviewProtected: true,
+  previewAccessToken: null as string | null
+};
+
+export const defaultShopDomainSeed = {
+  host: "default-store-preview.localhost",
+  type: "PREVIEW",
+  isPrimary: true,
+  verificationStatus: "VERIFIED"
+};
+
+export const marketplaceTaxonomyMetaSeed = {
+  source: "MARKETPLACE",
+  taxonomyVersion: 1,
+  checksum: null as string | null,
+  syncedAt: null as string | null
+};
+
+export const marketplaceCategoriesSeed = [
+  {
+    source: "MARKETPLACE",
+    externalId: "tools",
+    parentExternalId: null as string | null,
+    title: "Инструменты",
+    fullPath: "Инструменты",
+    level: 0,
+    isLeaf: false,
+    isActive: true
+  },
+  {
+    source: "MARKETPLACE",
+    externalId: "multitools",
+    parentExternalId: "tools",
+    title: "Мультитулы",
+    fullPath: "Инструменты / Мультитулы",
+    level: 1,
+    isLeaf: true,
+    isActive: true
+  },
+  {
+    source: "MARKETPLACE",
+    externalId: "accessories",
+    parentExternalId: "tools",
+    title: "Комплектующие",
+    fullPath: "Инструменты / Комплектующие",
+    level: 1,
+    isLeaf: true,
+    isActive: true
+  }
+];
+
+export const siteCategoriesSeed = [
+  {
+    slug: "multituly",
+    title: "Мультитулы",
+    parentSlug: null as string | null,
+    mappedMarketplaceCategoryExternalId: "multitools",
+    description: "Основная категория мультитулов KaiRox для сайта, каталога и SEO-описаний.",
+    seoTitle: "Мультитулы KaiRox",
+    seoDescription: "Каталог мультитулов KaiRox с описаниями, характеристиками и актуальными товарами.",
+    sortOrder: 0,
+    isVisible: true
+  },
+  {
+    slug: "komplektuyushchie",
+    title: "Комплектующие",
+    parentSlug: null as string | null,
+    mappedMarketplaceCategoryExternalId: "accessories",
+    description: "Аксессуары и комплектующие KaiRox: биты, пилы, скальпели и расходники.",
+    seoTitle: "Комплектующие KaiRox",
+    seoDescription: "Комплектующие и аксессуары KaiRox для мультитулов и EDC-товаров.",
+    sortOrder: 1,
+    isVisible: true
+  }
+];
+
 export const dashboardSummary = {
   revenue30d: 428600,
   ordersInProgress: 37,
@@ -34,6 +115,7 @@ export const products = [
     sku: "KR30",
     title: "Мультитул KaiRox KR30",
     category: "Мультитулы",
+    siteCategorySlug: "multituly",
     price: 4990,
     stock: 37,
     reviews: 214
@@ -42,6 +124,7 @@ export const products = [
     sku: "KR13",
     title: "Мультитул KaiRox KR13",
     category: "Мультитулы",
+    siteCategorySlug: "multituly",
     price: 3990,
     stock: 21,
     reviews: 96
@@ -50,6 +133,7 @@ export const products = [
     sku: "BTM-16",
     title: "Набор магнитных бит KaiRox",
     category: "Комплектующие",
+    siteCategorySlug: "komplektuyushchie",
     price: 290,
     stock: 114,
     reviews: 53

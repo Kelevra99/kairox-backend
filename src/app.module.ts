@@ -12,7 +12,7 @@ import { PromotionModule } from "./modules/promotion/promotion.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { SiteSettingsModule } from "./modules/site-settings/site-settings.module";
 import { PrismaModule } from "./modules/prisma/prisma.module";
-
+import { SiteCategoriesModule } from "./modules/site-categories/site-categories.module";
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -23,6 +23,7 @@ import { PrismaModule } from "./modules/prisma/prisma.module";
     PrismaModule,
     HealthModule,
     DashboardModule,
+    SiteCategoriesModule,
     OrdersModule,
     ProductsModule,
     DeliveryModule,

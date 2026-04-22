@@ -1,10 +1,10 @@
 export default () => {
-  const port = Number(process.env.PORT ?? 3001);
+  const port = Number(process.env.PORT ?? 3101);
 
   return {
     port,
     nodeEnv: process.env.NODE_ENV ?? "development",
-    frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3000",
+    frontendUrl: process.env.FRONTEND_URL ?? "http://localhost:3100",
     databaseUrl:
       process.env.DATABASE_URL ??
       "postgresql://postgres:postgres@localhost:5432/kairox_shop?schema=public",

@@ -9,6 +9,7 @@
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.prisma\"",
     "fonts:bootstrap": "ts-node -r tsconfig-paths/register src/scripts/bootstrap-fonts.ts",
+    "marketplace:categories:import": "ts-node -r tsconfig-paths/register src/scripts/import-marketplace-categories.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
@@ -27,7 +28,8 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nestjs/cli": "11.0.10",
