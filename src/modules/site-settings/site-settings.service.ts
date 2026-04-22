@@ -584,38 +584,42 @@ export class SiteSettingsService {
 
       const warnings = this.buildCategoryImageWarnings(originalWidth, originalHeight);
 
-      const resizedBuffer = await source
+      const resizedResult = await sharp(buffer, { failOn: "none" })
+        .rotate()
         .resize({
           width: 1200,
           height: 1200,
           fit: "inside",
           withoutEnlargement: true
         })
-        .png()
-        .toBuffer();
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
 
-      const resizedMeta = await sharp(resizedBuffer).metadata();
-      const contentWidth = resizedMeta.width ?? originalWidth;
-      const contentHeight = resizedMeta.height ?? originalHeight;
+      const resizedBuffer = resizedResult.data;
+      const contentWidth = resizedResult.info.width ?? originalWidth;
+      const contentHeight = resizedResult.info.height ?? originalHeight;
+      const contentChannels = resizedResult.info.channels ?? 4;
 
       const left = Math.max(0, Math.floor((1200 - contentWidth) / 2));
+      const right = Math.max(0, 1200 - contentWidth - left);
       const top = Math.max(0, Math.floor((1200 - contentHeight) / 2));
+      const bottom = Math.max(0, 1200 - contentHeight - top);
 
-      const processedBuffer = await sharp({
-        create: {
-          width: 1200,
-          height: 1200,
-          channels: 4,
-          background: { r: 0, g: 0, b: 0, alpha: 0 }
+      const processedBuffer = await sharp(resizedBuffer, {
+        raw: {
+          width: contentWidth,
+          height: contentHeight,
+          channels: contentChannels
         }
       })
-        .composite([
-          {
-            input: resizedBuffer,
-            left,
-            top
-          }
-        ])
+        .extend({
+          top,
+          bottom,
+          left,
+          right,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
         .webp({
           quality: 82,
           alphaQuality: 90
@@ -721,7 +725,7 @@ export class SiteSettingsService {
 
     if (width < 800 || height < 800) {
       warnings.push(
-        "Исходное изображение меньше рекомендуемого размера 800×800 px. Мы его сохранили, но на сайте оно может выглядеть менее чётко."
+        "Исходное изображение меньше рекомендуемого размера 800×800 px. Мы его сохранили без увеличения, но на сайте оно может выглядеть менее чётко."
       );
     }
 
