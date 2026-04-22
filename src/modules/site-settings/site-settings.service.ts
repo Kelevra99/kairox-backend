@@ -584,20 +584,42 @@ export class SiteSettingsService {
 
       const warnings = this.buildCategoryImageWarnings(originalWidth, originalHeight);
 
-      const processedBuffer = await source
+      const resizedBuffer = await source
         .resize({
           width: 1200,
           height: 1200,
-          fit: "contain",
-          background: { r: 0, g: 0, b: 0, alpha: 0 }
+          fit: "inside",
+          withoutEnlargement: true
         })
+        .toBuffer();
+
+      const resizedMeta = await sharp(resizedBuffer).metadata();
+      const contentWidth = resizedMeta.width ?? originalWidth;
+      const contentHeight = resizedMeta.height ?? originalHeight;
+
+      const left = Math.max(0, Math.floor((1200 - contentWidth) / 2));
+      const top = Math.max(0, Math.floor((1200 - contentHeight) / 2));
+
+      const processedBuffer = await sharp({
+        create: {
+          width: 1200,
+          height: 1200,
+          channels: 4,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        }
+      })
+        .composite([
+          {
+            input: resizedBuffer,
+            left,
+            top
+          }
+        ])
         .webp({
           quality: 82,
           alphaQuality: 90
         })
         .toBuffer();
-
-      const processedMeta = await sharp(processedBuffer).metadata();
 
       const directory = join(process.cwd(), "uploads", "site");
       await mkdir(directory, { recursive: true });
@@ -613,8 +635,10 @@ export class SiteSettingsService {
         imageMeta: {
           originalWidth,
           originalHeight,
-          width: processedMeta.width ?? 1200,
-          height: processedMeta.height ?? 1200,
+          contentWidth,
+          contentHeight,
+          canvasWidth: 1200,
+          canvasHeight: 1200,
           format: "webp",
           recommended: "1200x1200",
           minimumRecommended: "800x800"
@@ -696,17 +720,17 @@ export class SiteSettingsService {
 
     if (width < 800 || height < 800) {
       warnings.push(
-        "Изображение меньше рекомендуемого размера 800×800 px. Оно сохранено, но на сайте может выглядеть менее чётко."
+        "Исходное изображение меньше рекомендуемого размера 800×800 px. Мы его сохранили, но на сайте оно может выглядеть менее чётко."
       );
     }
 
     if (diff > 0 && diff <= 20) {
       warnings.push(
-        "Изображение почти квадратное. Мы автоматически привели его к формату 1200×1200 и добавили прозрачные поля."
+        "Изображение почти квадратное. Мы сохранили его и автоматически добавили прозрачные поля до формата 1200×1200."
       );
     } else if (diff > 20) {
       warnings.push(
-        "Изображение не квадратное. Мы автоматически привели его к формату 1200×1200 и добавили прозрачные поля. Для лучшего отображения рекомендуется квадрат 1200×1200 px."
+        "Изображение не квадратное. Мы автоматически уменьшили его по пропорциям и добавили прозрачные поля до формата 1200×1200. Для лучшего отображения рекомендуется квадрат 1200×1200 px."
       );
     }
 
