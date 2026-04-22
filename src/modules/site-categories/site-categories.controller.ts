@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
 import { SiteCategoriesService } from "./site-categories.service";
 import { CreateSiteCategoryDto } from "./dto/create-site-category.dto";
 
@@ -29,5 +29,10 @@ export class SiteCategoriesController {
     @Body() payload: CreateSiteCategoryDto
   ) {
     return this.siteCategoriesService.update(id, payload);
+  }
+
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.siteCategoriesService.remove(id);
   }
 }

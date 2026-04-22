@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import type { FastifyRequest } from "fastify";
 import sharp = require("sharp");
@@ -758,6 +758,78 @@ export class SiteSettingsService {
     }
 
     return this.saveSettings(nextState);
+  }
+
+  async deleteAsset(type: string, assetUrl: string) {
+    if (!type) {
+      throw new BadRequestException("type is required.");
+    }
+
+    if (!assetUrl) {
+      throw new BadRequestException("url is required.");
+    }
+
+    if (type !== "category-image") {
+      throw new BadRequestException("Unsupported asset delete type.");
+    }
+
+    const references = await this.prisma.siteCategory.count({
+      where: {
+        imageUrl: assetUrl
+      }
+    });
+
+    if (references > 0) {
+      return {
+        deleted: false,
+        reason: "referenced"
+      };
+    }
+
+    const filePath = this.resolveSiteUploadPath(assetUrl);
+
+    if (!filePath) {
+      return {
+        deleted: false,
+        reason: "invalid-path"
+      };
+    }
+
+    try {
+      await unlink(filePath);
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code !== "ENOENT") {
+        throw error;
+      }
+    }
+
+    return {
+      deleted: true
+    };
+  }
+
+  private resolveSiteUploadPath(assetUrl: string) {
+    try {
+      const url =
+        assetUrl.startsWith("http://") || assetUrl.startsWith("https://")
+          ? new URL(assetUrl)
+          : new URL(assetUrl, "http://localhost");
+
+      if (!url.pathname.startsWith("/uploads/site/")) {
+        return null;
+      }
+
+      const filename = url.pathname.split("/").pop() ?? "";
+
+      if (!filename || filename.includes("..")) {
+        return null;
+      }
+
+      return join(process.cwd(), "uploads", "site", filename);
+    } catch {
+      return null;
+    }
   }
 
   private buildCategoryImageWarnings(width: number, height: number) {

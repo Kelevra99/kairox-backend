@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Query, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Patch, Post, Query, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { SiteSettingsService } from "./site-settings.service";
 import { UpdateSiteSettingsDto } from "./dto/update-site-settings.dto";
@@ -31,5 +31,13 @@ export class SiteSettingsController {
   @Post("assets")
   uploadAsset(@Req() request: FastifyRequest, @Query("type") type: string) {
     return this.siteSettingsService.uploadAsset(request, type);
+  }
+
+  @Delete("assets")
+  deleteAsset(
+    @Query("type") type: string,
+    @Query("url") assetUrl: string
+  ) {
+    return this.siteSettingsService.deleteAsset(type, assetUrl);
   }
 }
