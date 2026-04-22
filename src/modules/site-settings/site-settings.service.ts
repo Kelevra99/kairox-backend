@@ -591,6 +591,7 @@ export class SiteSettingsService {
           fit: "inside",
           withoutEnlargement: true
         })
+        .png()
         .toBuffer();
 
       const resizedMeta = await sharp(resizedBuffer).metadata();
