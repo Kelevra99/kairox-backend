@@ -70,6 +70,16 @@ enum TaxonomySource {
   OZON
 }
 
+enum SiteAssetStatus {
+  TEMPORARY
+  ATTACHED
+}
+
+enum SiteAssetType {
+  CATEGORY_IMAGE
+  RICH_TEXT_IMAGE
+}
+
 model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -77,6 +87,8 @@ model AdminUser {
   name         String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  siteAssets   SiteAsset[]
 }
 
 model Shop {
@@ -95,6 +107,7 @@ model Shop {
   siteCategories SiteCategory[]
   siteThemes     SiteTheme[]
   siteBanners    SiteBanner[]
+  siteAssets     SiteAsset[]
 }
 
 model ShopDomain {
@@ -352,6 +365,32 @@ model FaqEntry {
   isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model SiteAsset {
+  id           String          @id @default(cuid())
+  shopId       String
+  userId       String?
+  type         SiteAssetType
+  status       SiteAssetStatus @default(TEMPORARY)
+  url          String          @unique
+  storagePath  String          @unique
+  originalName String?
+  originalSize Int?
+  width        Int?
+  height       Int?
+  mimeType     String          @default("image/webp")
+  ownerType    String?
+  ownerId      String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  shop Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  user AdminUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, type, status])
+  @@index([userId])
+  @@index([ownerType, ownerId])
 }
 
 model SiteTheme {

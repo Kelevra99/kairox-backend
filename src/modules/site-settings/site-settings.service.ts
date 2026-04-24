@@ -1,9 +1,17 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import type { FastifyRequest } from "fastify";
 import sharp = require("sharp");
-import { Prisma, ShopStatus, ShopDomainType, DomainVerificationStatus } from "@prisma/client";
+import {
+  Prisma,
+  ShopStatus,
+  ShopDomainType,
+  DomainVerificationStatus,
+  SiteAssetStatus,
+  SiteAssetType
+} from "@prisma/client";
 import { PrismaService } from "@/modules/prisma/prisma.service";
 import { AppConfigService } from "@/modules/config/app-config.service";
 import { UpdateSiteSettingsDto } from "./dto/update-site-settings.dto";
@@ -545,7 +553,7 @@ export class SiteSettingsService {
       throw new BadRequestException("File is required.");
     }
 
-    const imageTypes = new Set(["logo", "favicon", "category-image"]);
+    const imageTypes = new Set(["logo", "favicon", "category-image", "rich-text-image"]);
     const fontTypes = new Set([
       "site-body-font",
       "site-heading-font",
@@ -558,6 +566,10 @@ export class SiteSettingsService {
     }
 
     const buffer = await file.toBuffer();
+
+    if (type === "rich-text-image") {
+      return this.uploadRichTextImageAsset(file, buffer);
+    }
 
     if (type === "category-image") {
       const allowedMimeTypes = new Set([
@@ -760,6 +772,93 @@ export class SiteSettingsService {
     return this.saveSettings(nextState);
   }
 
+  private async uploadRichTextImageAsset(
+    file: { filename?: string; mimetype: string },
+    buffer: Buffer
+  ) {
+    const allowedMimeTypes = new Set([
+      "image/png",
+      "image/jpeg",
+      "image/webp"
+    ]);
+
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      throw new BadRequestException(
+        "Для изображения в тексте разрешены только JPG, PNG и WebP."
+      );
+    }
+
+    const source = sharp(buffer, {
+      failOn: "none",
+      sequentialRead: true
+    }).rotate();
+
+    const metadata = await source.metadata();
+    const originalWidth = metadata.width ?? 0;
+    const originalHeight = metadata.height ?? 0;
+
+    if (!originalWidth || !originalHeight) {
+      throw new BadRequestException("Не удалось определить размеры изображения.");
+    }
+
+    const processed = await source
+      .clone()
+      .toColourspace("srgb")
+      .resize({
+        width: 1200,
+        height: 1200,
+        fit: "inside",
+        withoutEnlargement: true
+      })
+      .webp({
+        quality: 82,
+        alphaQuality: 90
+      })
+      .toBuffer({ resolveWithObject: true });
+
+    const shop = await this.ensureDefaultShop();
+
+    const directory = join(process.cwd(), "uploads", "site", "rich-text");
+    await mkdir(directory, { recursive: true });
+
+    const token = randomUUID().replace(/-/g, "").slice(0, 16);
+    const filename = `rich-text-image-${Date.now()}-${token}.webp`;
+    const storagePath = `site/rich-text/${filename}`;
+
+    await writeFile(join(directory, filename), processed.data);
+
+    const assetUrl = `${this.config.assetBaseUrl}/uploads/site/rich-text/${filename}`;
+
+    const asset = await this.prisma.siteAsset.create({
+      data: {
+        shopId: shop.id,
+        userId: null,
+        type: SiteAssetType.RICH_TEXT_IMAGE,
+        status: SiteAssetStatus.TEMPORARY,
+        url: assetUrl,
+        storagePath,
+        originalName: file.filename ?? null,
+        originalSize: buffer.byteLength,
+        width: processed.info.width,
+        height: processed.info.height,
+        mimeType: "image/webp"
+      }
+    });
+
+    return {
+      assetId: asset.id,
+      assetUrl,
+      imageMeta: {
+        originalWidth,
+        originalHeight,
+        width: processed.info.width,
+        height: processed.info.height,
+        format: "webp",
+        maxSide: 1200
+      }
+    };
+  }
+
   async deleteAsset(type: string, assetUrl: string) {
     if (!type) {
       throw new BadRequestException("type is required.");
@@ -767,6 +866,10 @@ export class SiteSettingsService {
 
     if (!assetUrl) {
       throw new BadRequestException("url is required.");
+    }
+
+    if (type === "rich-text-image") {
+      return this.deleteTrackedSiteAsset(assetUrl);
     }
 
     if (type !== "category-image") {
@@ -807,6 +910,55 @@ export class SiteSettingsService {
     return {
       deleted: true
     };
+  }
+
+  private async deleteTrackedSiteAsset(assetUrl: string) {
+    const asset = await this.prisma.siteAsset.findUnique({
+      where: {
+        url: assetUrl
+      }
+    });
+
+    if (!asset) {
+      return {
+        deleted: false,
+        reason: "not-found"
+      };
+    }
+
+    await this.deleteStoredUploadFile(asset.storagePath);
+
+    await this.prisma.siteAsset.delete({
+      where: {
+        id: asset.id
+      }
+    });
+
+    return {
+      deleted: true
+    };
+  }
+
+  private async deleteStoredUploadFile(storagePath: string) {
+    if (
+      !storagePath ||
+      storagePath.includes("..") ||
+      storagePath.startsWith("/") ||
+      storagePath.startsWith("\\")
+    ) {
+      return;
+    }
+
+    const filePath = join(process.cwd(), "uploads", ...storagePath.split("/"));
+
+    try {
+      await unlink(filePath);
+    } catch (error) {
+      const err = error as NodeJS.ErrnoException;
+      if (err.code !== "ENOENT") {
+        throw error;
+      }
+    }
   }
 
   private resolveSiteUploadPath(assetUrl: string) {
